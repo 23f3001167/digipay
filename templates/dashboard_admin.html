@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: rgb(126, 174, 236);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .summary-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+        }
+        .nav-tabs .nav-link {
+            color: #495057;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            margin-right: 5px;
+            transition: all 0.3s ease;
+        }
+        .nav-tabs .nav-link:hover {
+            background-color: #e9ecef;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .search-box {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .stats-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0;
+        }
+        .modal-header {
+            border-radius: 10px 10px 0 0;
+        }
+        .btn-action {
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .tab-pane {
+            padding: 20px 0;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            z-index: 10;
+        }
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+            .action-buttons .btn {
+                width: 100%;
+            }
+            .nav-tabs .nav-link {
+                margin-bottom: 5px;
+            }
+            .btn-group-vertical .btn {
+                font-size: 0.8rem;
+                padding: 0.25rem 0.5rem;
+            }
+        }
+        /* Style for new history modal */
+        #studentHistoryTable th {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">
+            <i class="bi bi-speedometer2 me-2"></i>Admin Dashboard
+        </a>
+        <h5 class="text-white m-0">
+            <i class="bi bi-building me-2"></i>{{ school.name }} School
+        </h5>
+        <a href="/logout" class="btn btn-danger btn-sm">
+            <i class="bi bi-box-arrow-right me-1"></i>Logout
+        </a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                    <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <i class="bi bi-people display-6"></i>
+                <h3>{{ students|length }}</h3>
+                <p class="mb-0">Total Students</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <i class="bi bi-shop display-6"></i>
+                <h3>{{ shopkeepers|length }}</h3>
+                <p class="mb-0">Shopkeepers</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <i class="bi bi-clock-history display-6"></i>
+                <h3>{{ pending_transactions|length }}</h3>
+                <p class="mb-0">Pending Requests</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <i class="bi bi-bank display-6"></i>
+                <h3>{% if bank_detail %}1{% else %}0{% endif %}</h3>
+                <p class="mb-0">Bank Accounts</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn btn-success btn-action" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+            <i class="bi bi-person-plus me-2"></i>Add Student
+        </button>
+        <button class="btn btn-info btn-action" data-bs-toggle="modal" data-bs-target="#addShopModal">
+            <i class="bi bi-shop me-2"></i>Add Shopkeeper
+        </button>
+        <button class="btn btn-warning btn-action" data-bs-toggle="modal" data-bs-target="#addBankModal" 
+                {% if bank_detail %}disabled{% endif %}>
+            <i class="bi bi-bank me-2"></i>Add Bank Account
+        </button>
+        <button class="btn btn-dark btn-action" data-bs-toggle="modal" data-bs-target="#verifyModal">
+            <i class="bi bi-receipt-cutoff me-2"></i>Verify Transactions
+        </button>
+    </div>
+
+    <div class="search-box mb-4">
+        <form method="GET" action="/admin/dashboard" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Search By:</label>
+                <select class="form-select" name="field" required>
+                    <option value="">Select Field...</option>
+                    <optgroup label="Student Fields">
+                        <option value="name" {% if field=='name' %}selected{% endif %}>Student Name</option>
+                        <option value="student_id" {% if field=='student_id' %}selected{% endif %}>Student ID</option>
+                        <option value="class_name" {% if field=='class_name' %}selected{% endif %}>Class</option>
+                        <option value="father_name" {% if field=='father_name' %}selected{% endif %}>Father Name</option>
+                        <option value="phone" {% if field=='phone' %}selected{% endif %}>Student Phone</option>
+                    </optgroup>
+                    <optgroup label="Shopkeeper Fields">
+                        <option value="shop_name" {% if field=='shop_name' %}selected{% endif %}>Shopkeeper Name</option>
+                        <option value="shop_email" {% if field=='shop_email' %}selected{% endif %}>Shopkeeper Email</option>
+                        <option value="shop_phone" {% if field=='shop_phone' %}selected{% endif %}>Shopkeeper Phone</option>
+                        <option value="shop_address" {% if field=='shop_address' %}selected{% endif %}>Shopkeeper Address</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Search Term:</label>
+                <input type="text" name="query" class="form-control" placeholder="Enter search term..." value="{{ query or '' }}" required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-2"></i>Search
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="/admin/dashboard" class="btn btn-danger w-100">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {{ 'active' if show_students else '' }}" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab" aria-controls="students" aria-selected="{{ 'true' if show_students else 'false' }}">
+                <i class="bi bi-people me-2"></i>Students ({{ students|length }})
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {{ 'active' if show_shopkeepers else '' }}" id="shopkeepers-tab" data-bs-toggle="tab" data-bs-target="#shopkeepers" type="button" role="tab" aria-controls="shopkeepers" aria-selected="{{ 'true' if show_shopkeepers else 'false' }}">
+                <i class="bi bi-shop me-2"></i>Shopkeepers ({{ shopkeepers|length }})
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab" aria-controls="bank" aria-selected="false">
+                <i class="bi bi-bank me-2"></i>Bank Account
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="adminTabsContent">
+        <div class="tab-pane fade {{ 'show active' if show_students else '' }}" id="students" role="tabpanel" aria-labelledby="students-tab">
+            {% if students %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th><i class="bi bi-person me-2"></i>Name</th>
+                            <th><i class="bi bi-id-card me-2"></i>ID</th>
+                            <th><i class="bi bi-mortarboard me-2"></i>Class</th>
+                            <th><i class="bi bi-person-badge me-2"></i>Father</th>
+                            <th><i class="bi bi-gender-ambiguous me-2"></i>Gender</th> <th><i class="bi bi-wallet2 me-2"></i>Balance</th>
+                            <th><i class="bi bi-qr-code me-2"></i>QR Code</th>
+                            <th><i class="bi bi-person-vcard me-2"></i>Parent</th>
+                            <th><i class="bi bi-gear me-2"></i>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td class="fw-bold">{{ student.name }}</td>
+                            <td><code>{{ student.student_id }}</code></td>
+                            <td>{{ student.class_name}}</td>
+                            <td>{{ student.father_name }}</td>
+                            <td>{{ student.gender }}</td> <td class="fw-bold text-success">₹{{ "%.2f"|format(student.balance) }}</td>
+                            <td>
+                                {% if student.qr_code_path %}
+                                    <a href="{{ url_for('static', filename='qrcodes/' ~ student.qr_code_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i>View QR
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if student.parent %}
+                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewParentModal" 
+                                            data-parent-email="{{ student.parent.email }}" 
+                                            data-parent-phone="{{ student.parent.phone }}" 
+                                            data-parent-address="{{ student.parent.address }}"
+                                            data-student-name="{{ student.name }}">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary mt-1" data-bs-toggle="modal" data-bs-target="#resetParentPasswordModal" 
+                                            data-parent-id="{{ student.parent.id }}">
+                                        <i class="bi bi-key me-1"></i>Reset PW
+                                    </button>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group-vertical">
+                                    <button class="btn btn-sm btn-success mb-1" data-bs-toggle="modal" data-bs-target="#adjustBalanceModal"
+                                            data-student-id="{{ student.id }}"
+                                            data-student-name="{{ student.name }}"
+                                            data-student-balance="{{ student.balance }}">
+                                        <i class="bi bi-cash-coin me-1"></i>Adjust
+                                    </button>
+                                    
+                                    <button class="btn btn-sm btn-info mb-1" data-bs-toggle="modal" data-bs-target="#studentPaymentHistoryModal"
+                                            data-student-id="{{ student.id }}">
+                                        <i class="bi bi-clock-history me-1"></i>History
+                                    </button>
+
+                                    <button class="btn btn-sm btn-warning mb-1" data-bs-toggle="modal" data-bs-target="#editStudentModal" 
+                                            data-student-id="{{ student.id }}"
+                                            data-student-name="{{ student.name }}"
+                                            data-student-student_id="{{ student.student_id }}"
+                                            data-student-class_name="{{ student.class_name }}"
+                                            data-student-age="{{ student.age }}"
+                                            data-student-address="{{ student.address }}"
+                                            data-student-father_name="{{ student.father_name }}"
+                                            data-student-phone="{{ student.phone }}"
+                                            data-student-gender="{{ student.gender }}"
+                                            data-student-upi_pin="{{ student.upi_pin }}">
+                                        <i class="bi bi-pencil me-1"></i>Edit
+                                    </button>
+                                    
+                                    <form action="{{ url_for('delete_student', student_id=student.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete {{ student.name }}? This is permanent.');">
+                                        <button type="submit" class="btn btn-sm btn-danger w-100">
+                                            <i class="bi bi-trash me-1"></i>Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-people display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No Students Found</h4>
+                <p class="text-muted">No students match your search criteria.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade {{ 'show active' if show_shopkeepers else '' }}" id="shopkeepers" role="tabpanel" aria-labelledby="shopkeepers-tab">
+            {% if shopkeepers %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th><i class="bi bi-person me-2"></i>Name</th>
+                            <th><i class="bi bi-envelope me-2"></i>Email</th>
+                            <th><i class="bi bi-telephone me-2"></i>Phone</th>
+                            <th><i class="bi bi-geo-alt me-2"></i>Address</th>
+                            <th><i class="bi bi-wallet2 me-2"></i>Balance</th>
+                            <th><i class="bi bi-gear me-2"></i>Actions</th>
+                            <th><i class="bi bi-cash-coin me-2"></i>Settlement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shop in shopkeepers %}
+                        <tr>
+                            <td class="fw-bold">{{ shop.name }}</td>
+                            <td>{{ shop.email }}</td>
+                            <td>{{ shop.phone }}</td>
+                            <td>{{ shop.address }}</td>
+                            <td class="fw-bold text-primary">₹{{ "%.2f"|format(shop.balance) if shop.balance else "0.00" }}</td>
+                            <td>
+                                <div class="btn-group-vertical">
+                                    <button class="btn btn-sm btn-warning mb-1" data-bs-toggle="modal" data-bs-target="#editShopkeeperModal" 
+                                            data-shopkeeper-id="{{ shop.id }}"
+                                            data-shopkeeper-name="{{ shop.name }}"
+                                            data-shopkeeper-email="{{ shop.email }}"
+                                            data-shopkeeper-phone="{{ shop.phone }}"
+                                            data-shopkeeper-address="{{ shop.address }}">
+                                        <i class="bi bi-pencil me-1"></i>Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary mb-1" data-bs-toggle="modal" data-bs-target="#resetShopkeeperPasswordModal" 
+                                            data-shopkeeper-id="{{ shop.id }}">
+                                        <i class="bi bi-key me-1"></i>Reset PW
+                                    </button>
+                                    <form action="{{ url_for('delete_shopkeeper', shopkeeper_id=shop.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete {{ shop.name }}?');">
+                                        <button type="submit" class="btn btn-sm btn-danger w-100">
+                                            <i class="bi bi-trash me-1"></i>Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group-vertical">
+                                    <button class="btn btn-sm btn-warning mb-1" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#settleBalanceModal"
+                                            data-shop-id="{{ shop.id }}"
+                                            data-shop-name="{{ shop.name }}"
+                                            data-shop-balance="{{ shop.balance if shop.balance else 0.0 }}">
+                                        <i class="bi bi-cash-coin me-1"></i>Settle
+                                    </button>
+                                    <button class="btn btn-sm btn-info" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#settlementHistoryModal"
+                                            data-shop-id="{{ shop.id }}"
+                                            data-shop-name="{{ shop.name }}"
+                                            data-shop-balance="{{ shop.balance if shop.balance else 0.0 }}">
+                                        <i class="bi bi-clock-history me-1"></i>History
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-shop display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No Shopkeepers Found</h4>
+                <p class="text-muted">No shopkeepers match your search criteria.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="bank" role="tabpanel" aria-labelledby="bank-tab">
+            {% if bank_detail %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-bank me-2"></i>Bank Account Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Bank Name:</strong> {{ bank_detail.bank_name }}</p>
+                            <p><strong>Account Number:</strong> ****{{ bank_detail.account_number[-4:] }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>IFSC Code:</strong> {{ bank_detail.ifsc_code }}</p>
+                            <p><strong>Account Holder:</strong> {{ school.name }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/admin/delete_bank" class="btn btn-danger" 
+                           onclick="return confirm('Are you sure you want to delete this bank account? You will need to add a new one if required.');">
+                            <i class="bi bi-trash me-2"></i>Delete Bank Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-bank display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No Bank Account Added</h4>
+                <p class="text-muted">Click the "Add Bank Account" button to set up banking details.</p>
+                <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addBankModal">
+                    <i class="bi bi-bank me-2"></i>Add Bank Account
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg"> <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Student & Parent</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="/admin/add_student">
+                <div class="modal-body">
+                    <h6 class="text-primary">Student Details</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label for="name" class="form-label">Student Name:</label>
+                            <input type="text" name="name" id="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label for="student_id" class="form-label">Student ID:</label>
+                            <input type="text" name="student_id" id="student_id" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <label for="student_class" class="form-label">Class:</label>
+                            <input type="text" name="student_class" id="student_class" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label for="age" class="form-label">Age:</label>
+                            <input type="number" name="age" id="age" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label for="gender" class="form-label">Gender:</label>
+                            <select name="gender" id="gender" class="form-select" required>
+                                <option value="">Select...</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label for="address" class="form-label">Student Address:</label>
+                        <input type="text" name="address" id="address" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label for="father_name" class="form-label">Father Name:</label>
+                            <input type="text" name="father_name" id="father_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label for="phone" class="form-label">Student Phone:</label>
+                            <input type="tel" name="phone" id="phone" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label for="upi_pin" class="form-label">Student UPI PIN (for purchases):</label>
+                        <div class="input-group">
+                            <input type="password" name="upi_pin" id="upi_pin" class="form-control" required>
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('upi_pin','upiEye')">
+                                <i class="bi bi-eye-slash" id="upiEye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6 class="text-primary">Parent Details</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label for="parent_phone" class="form-label">Parent Phone:</label>
+                            <input type="tel" name="parent_phone" id="parent_phone" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label for="parentPassword" class="form-label">Set Parent Password:</label>
+                            <div class="input-group">
+                                <input type="password" name="parent_password" id="parentPassword" class="form-control" required>
+                                <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('parentPassword','parentEye')">
+                                    <i class="bi bi-eye-slash" id="parentEye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label for="parent_address" class="form-label">Parent Address:</label>
+                        <input type="text" name="parent_address" id="parent_address" class="form-control" required>
+                    </div>
+                    <div class="form-text mb-2">
+                        Parent email will be auto-generated as <code>{student_id}p{{ school.name.lower() }}@gmail.com</code>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Add Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addShopModal" tabindex="-1" aria-labelledby="addShopModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Shopkeeper</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="/admin/add_shopkeeper">
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label for="name" class="form-label">Shop Name:</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="address" class="form-label">Address:</label>
+                        <input type="text" name="address" class="form-control" required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="phone" class="form-label">Phone Number:</label>
+                        <input type="tel" name="phone" class="form-control" required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="shopPassword" class="form-label">Password:</label>
+                        <div class="input-group">
+                            <input type="password" name="password" id="shopPassword" class="form-control" required>
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('shopPassword','shopEye')">
+                                <i class="bi bi-eye-slash" id="shopEye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Add Shopkeeper</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addBankModal" tabindex="-1" aria-labelledby="addBankModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Bank Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="/admin/add_bank" onsubmit="return validateBankForm()">
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label for="bank_name" class="form-label">Bank Name:</label>
+                        <input type="text" name="bank_name" class="form-control" placeholder="Bank Name" required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="account_number" class="form-label">Account Number:</label>
+                        <div class="input-group">
+                            <input type="password" name="account_number" id="account_number" class="form-control" placeholder="Account Number" required>
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('account_number','accEye')">
+                                <i class="bi bi-eye-slash" id="accEye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label for="re_account_number" class="form-label">Re Enter Account Number:</label>
+                        <input type="text" name="re_account_number" id="re_account_number" class="form-control" placeholder="Re-enter Account Number" required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="ifsc_code" class="form-label">IFSC Code:</label>
+                        <input type="text" name="ifsc_code" class="form-control" placeholder="IFSC Code" required>
+                    </div>
+                    <div id="bank-error" class="text-danger small mb-2" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save Bank Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="viewParentModal" tabindex="-1" aria-labelledby="viewParentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewParentModalLabel">Parent Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Details for <strong><span id="modalStudentName"></span>'s</strong> Parent:</p>
+                <table class="table table-bordered mb-0">
+                    <tr><th>Parent Email</th><td id="modalParentEmail"></td></tr>
+                    <tr><th>Parent Phone</th><td id="modalParentPhone"></td></tr>
+                    <tr><th>Parent Address</th><td id="modalParentAddress"></td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="resetParentPasswordModal" tabindex="-1" aria-labelledby="resetParentPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="resetParentPasswordForm" method="POST" action="">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resetParentPasswordModalLabel">Reset Parent Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password</label>
+                        <input type="password" class="form-control" name="new_password" id="modal_new_password" required>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label for="confirm_password" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" name="confirm_password" id="modal_confirm_password" required>
+                        <i class="bi bi-eye-slash password-toggle" id="modal_togglePassword" onclick="togglePassword('modal_confirm_password', 'modal_togglePassword')"></i>
+                    </div>
+                    <div id="modal_password_error" class="text-danger mb-2" style="display:none;">Passwords do not match!</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Reset Password</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="resetShopkeeperPasswordModal" tabindex="-1" aria-labelledby="resetShopkeeperPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetShopkeeperPasswordModalLabel">Reset Shopkeeper Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="resetShopkeeperPasswordForm" method="POST" action="">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="shopkeeper_new_password" class="form-label">New Password</label>
+                        <input type="password" class="form-control" name="new_password" id="shopkeeper_new_password" required>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label for="shopkeeper_confirm_password" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" name="confirm_password" id="shopkeeper_confirm_password" required>
+                        <i class="bi bi-eye-slash password-toggle" id="shopkeeper_togglePassword" onclick="togglePassword('shopkeeper_confirm_password', 'shopkeeper_togglePassword')"></i>
+                    </div>
+                    <div id="shopkeeper_password_error" class="text-danger mb-2" style="display:none;">Passwords do not match!</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Reset Password</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="settleBalanceModal" tabindex="-1" aria-labelledby="settleBalanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="settleBalanceModalLabel">Settle Shopkeeper Balance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="settleBalanceForm" method="POST" action="">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Shopkeeper Name:</label>
+                        <p class="fw-bold" id="modalShopkeeperName"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Current Balance:</label>
+                        <p class="fw-bold text-primary" id="modalCurrentBalance"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="settleAmount" class="form-label">Settle Amount:</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" name="settle_amount" id="settleAmount" required placeholder="Enter amount to settle">
+                        <div class="form-text">Enter the amount you want to settle from the current balance.</div>
+                    </div>
+                    <div id="settle-error" class="text-danger mb-2" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Settle Balance</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="settlementHistoryModal" tabindex="-1" aria-labelledby="settlementHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="settlementHistoryModalLabel">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Settlement History - <span id="historyShopkeeperName"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card summary-card">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary">
+                                    <i class="bi bi-person me-1"></i>Shopkeeper Details
+                                </h6>
+                                <p class="mb-1"><strong>Name:</strong> <span id="historyShopName"></span></p>
+                                <p class="mb-1"><strong>Current Balance:</strong> ₹<span id="historyShopBalance"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card summary-card">
+                            <div class="card-body">
+                                <h6 class="card-title text-success">
+                                    <i class="bi bi-graph-up me-1"></i>Settlement Summary
+                                </h6>
+                                <p class="mb-1"><strong>Total Settlements:</strong> <span id="totalSettlements">0</span></p>
+                                <p class="mb-1"><strong>Total Amount Settled:</strong> ₹<span id="totalAmountSettled">0.00</span></p>
+                                <p class="mb-0"><strong>Last Settlement:</strong> <span id="lastSettlementDate">Never</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="settlementHistoryContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading settlement history...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="verifyModal" tabindex="-1" aria-labelledby="verifyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="verifyModalLabel">
+                    <i class="bi bi-shield-check me-2"></i>Pending Transactions
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if pending_transactions %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Amount</th>
+                                <th>UTR Number</th>
+                                <th>Proof</th>
+                                <th>Submitted At</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in pending_transactions %}
+                            <tr>
+                                <td>{{ tx.student.student_id }}</td>
+                                <td>₹{{ tx.amount }}</td>
+                                <td>{{ tx.utr_number }}</td>
+                                <td>
+                                    {% if tx.screenshot_path %}
+                                        {% set filepath=tx.screenshot_path.replace('\\','/') %}
+                                        {% set filename=filepath.split('/')[-1] %}
+                                        <a href="{{ url_for('static', filename=filepath.split('static/')[-1]) }}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ tx.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td class="text-center">
+                                    <form action="/admin/approve_payment/{{ tx.id }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-success btn-sm mb-1">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Approve
+                                        </button>
+                                    </form>
+                                    <form id="declineForm{{ tx.id }}" action="/admin/decline_payment/{{ tx.id }}" method="POST" style="display:inline;">
+                                        <input type="hidden" name="decline_reason" id="declineReason{{ tx.id }}">
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="promptDeclineReason({{ tx.id }})">
+                                            <i class="bi bi-x-circle-fill me-1"></i>Decline
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <p class="text-center text-muted">No pending transactions at the moment.</p>
+                {% endif %}
+            </div>
+            <div class="modal-footer bg-light"></div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="editShopkeeperModal" tabindex="-1" aria-labelledby="editShopkeeperModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editShopkeeperModalLabel">Edit Shopkeeper</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editShopkeeperForm" method="POST" action="">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_shop_name" class="form-label">Shop Name:</label>
+                        <input type="text" name="name" id="edit_shop_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_shop_email" class="form-label">Email:</label>
+                        <input type="email" name="email" id="edit_shop_email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_shop_phone" class="form-label">Phone Number:</label>
+                        <input type="tel" name="phone" id="edit_shop_phone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_shop_address" class="form-label">Address:</label>
+                        <input type="text" name="address" id="edit_shop_address" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_shop_password" class="form-label">New Password (leave blank to keep current):</label>
+                        <div class="input-group">
+                            <input type="password" name="password" id="edit_shop_password" class="form-control">
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('edit_shop_password','edit_shop_eye')">
+                                <i class="bi bi-eye-slash" id="edit_shop_eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Only enter a password if you want to change it.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Update Shopkeeper</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-labelledby="editStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg"> <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editStudentModalLabel">Edit Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editStudentForm" method="POST" action="">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_student_name" class="form-label">Student Name:</label>
+                            <input type="text" name="name" id="edit_student_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_student_id" class="form-label">Student ID:</label>
+                            <input type="text" name="student_id" id="edit_student_id" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_student_class" class="form-label">Class:</label>
+                            <input type="text" name="student_class" id="edit_student_class" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_student_age" class="form-label">Age:</label>
+                            <input type="number" name="age" id="edit_student_age" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_student_gender" class="form-label">Gender:</label>
+                            <select name="gender" id="edit_student_gender" class="form-select" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_student_address" class="form-label">Address:</label>
+                        <input type="text" name="address" id="edit_student_address" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_student_father_name" class="form-label">Father Name:</label>
+                            <input type="text" name="father_name" id="edit_student_father_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_student_phone" class="form-label">Phone Number:</label>
+                            <input type="tel" name="phone" id="edit_student_phone" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_student_upi_pin" class="form-label">New UPI PIN (leave blank to keep current):</label>
+                        <div class="input-group">
+                            <input type="password" name="upi_pin" id="edit_student_upi_pin" class="form-control">
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('edit_student_upi_pin','edit_student_upi_eye')">
+                                <i class="bi bi-eye-slash" id="edit_student_upi_eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Update Student</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="adjustBalanceModal" tabindex="-1" aria-labelledby="adjustBalanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adjustBalanceModalLabel">Adjust Student Balance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="adjustBalanceForm" method="POST" action="">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Student Name:</label>
+                        <p class="fw-bold" id="adjustStudentName"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Current Balance:</label>
+                        <p class="fw-bold text-success" id="adjustStudentBalance"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transaction_type" class="form-label">Action:</label>
+                        <select class="form-select" name="transaction_type" id="transaction_type" required>
+                            <option value="add">Add Money (Credit)</option>
+                            <option value="remove">Remove Money (Debit)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount (₹):</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" name="amount" id="amount" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason:</label>
+                        <input type="text" class="form-control" name="reason" id="reason" placeholder="e.g., Prize money, fine, correction" required>
+                    </div>
+                    <div id="adjust-balance-error" class="text-danger" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Submit Adjustment</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="studentPaymentHistoryModal" tabindex="-1" aria-labelledby="studentPaymentHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="studentPaymentHistoryModalLabel">
+                    <i class="bi bi-clock-history me-2"></i>Payment History
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <h5>Student: <span id="historyStudentName" class="fw-bold text-primary">Loading...</span></h5>
+                        <p class="mb-0">ID: <code id="historyStudentId">...</code></p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <h5>Current Balance</h5>
+                        <h4 class="fw-bold text-success" id="historyStudentBalance">₹0.00</h4>
+                    </div>
+                </div>
+                
+                <div id="studentHistoryContent">
+                    <div id="historySpinner" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading history...</p>
+                    </div>
+                    
+                    <div class="table-responsive" id="historyTableContainer" style="display: none;">
+                        <table class="table table-striped table-bordered table-hover" id="studentHistoryTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentHistoryTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="noHistoryMessage" class="text-center py-5" style="display: none;">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <h5 class="text-muted mt-3">No History Found</h5>
+                        <p class="text-muted">This student has no transactions or payment requests.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // View Parent Modal (UPDATED)
+    document.getElementById('viewParentModal').addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const parentEmail = button.getAttribute('data-parent-email');
+        const parentPhone = button.getAttribute('data-parent-phone');
+        const parentAddress = button.getAttribute('data-parent-address');
+        const studentName = button.getAttribute('data-student-name');
+
+        document.getElementById('modalParentEmail').textContent = parentEmail || 'N/A';
+        document.getElementById('modalParentPhone').textContent = parentPhone || 'N/A';
+        document.getElementById('modalParentAddress').textContent = parentAddress || 'N/A';
+        document.getElementById('modalStudentName').textContent = studentName || 'N/A';
+    });
+
+    // Reset Parent Password Modal
+    const resetParentModal = document.getElementById("resetParentPasswordModal");
+    const resetParentForm = document.getElementById("resetParentPasswordForm");
+    const parentNewPasswordInput = document.getElementById("modal_new_password");
+    const parentConfirmPasswordInput = document.getElementById("modal_confirm_password");
+    const parentPasswordErrorDiv = document.getElementById("modal_password_error");
+
+    resetParentModal.addEventListener("show.bs.modal", function(event) {
+        const button = event.relatedTarget;
+        const parentId = button.getAttribute("data-parent-id");
+        resetParentForm.action = `/admin/reset_parent_password/${parentId}`;
+
+        parentNewPasswordInput.value = "";
+        parentConfirmPasswordInput.value = "";
+        parentPasswordErrorDiv.style.display = "none";
+    });
+
+    parentConfirmPasswordInput.addEventListener('input', function() {
+        if (parentNewPasswordInput.value !== parentConfirmPasswordInput.value) {
+            parentPasswordErrorDiv.style.display = "block";
+        } else {
+            parentPasswordErrorDiv.style.display = "none";
+        }
+    });
+
+    resetParentForm.addEventListener("submit", function(e) {
+        if (parentNewPasswordInput.value !== parentConfirmPasswordInput.value) {
+            e.preventDefault();
+            parentPasswordErrorDiv.style.display = "block";
+        }
+    });
+
+    // Reset Shopkeeper Password Modal
+    const resetShopkeeperModal = document.getElementById("resetShopkeeperPasswordModal");
+    const resetShopkeeperForm = document.getElementById("resetShopkeeperPasswordForm");
+    const shopkeeperNewPasswordInput = document.getElementById("shopkeeper_new_password");
+    const shopkeeperConfirmPasswordInput = document.getElementById("shopkeeper_confirm_password");
+    const shopkeeperPasswordErrorDiv = document.getElementById("shopkeeper_password_error");
+
+    resetShopkeeperModal.addEventListener("show.bs.modal", function(event) {
+        const button = event.relatedTarget;
+        const shopkeeperId = button.getAttribute("data-shopkeeper-id");
+        resetShopkeeperForm.action = `/admin/reset_shopkeeper_password/${shopkeeperId}`;
+
+        shopkeeperNewPasswordInput.value = "";
+        shopkeeperConfirmPasswordInput.value = "";
+        shopkeeperPasswordErrorDiv.style.display = "none";
+    });
+
+    shopkeeperConfirmPasswordInput.addEventListener('input', function() {
+        if (shopkeeperNewPasswordInput.value !== shopkeeperConfirmPasswordInput.value) {
+            shopkeeperPasswordErrorDiv.style.display = "block";
+        } else {
+            shopkeeperPasswordErrorDiv.style.display = "none";
+        }
+    });
+
+    resetShopkeeperForm.addEventListener("submit", function(e) {
+        if (shopkeeperNewPasswordInput.value !== shopkeeperConfirmPasswordInput.value) {
+            e.preventDefault();
+            shopkeeperPasswordErrorDiv.style.display = "block";
+        }
+    });
+
+    // Settlement History Modal
+    document.getElementById('settlementHistoryModal').addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const shopId = button.getAttribute('data-shop-id');
+        const shopName = button.getAttribute('data-shop-name');
+        const shopBalance = button.getAttribute('data-shop-balance');
+
+        document.getElementById('historyShopkeeperName').textContent = shopName;
+        document.getElementById('historyShopName').textContent = shopName;
+        document.getElementById('historyShopBalance').textContent = parseFloat(shopBalance).toFixed(2);
+
+        loadSettlementHistory(shopId);
+    });
+
+    async function loadSettlementHistory(shopkeeperId) {
+        try {
+            const response = await fetch(`/admin/settlement_history/${shopkeeperId}`);
+            const data = await response.json();
+            
+            if (!response.ok) throw new Error(data.error || 'Failed to load settlement history');
+
+            document.getElementById('totalSettlements').textContent = data.summary.total_settlements;
+            document.getElementById('totalAmountSettled').textContent = data.summary.total_settled.toFixed(2);
+            document.getElementById('lastSettlementDate').textContent = data.summary.last_settlement_date || 'Never';
+
+            if (data.settlements && data.settlements.length > 0) {
+                let settlementsHtml = `
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-hover">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Amount Settled</th>
+                                    <th>Date & Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.settlements.forEach((settlement, index) => {
+                    settlementsHtml += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td class="fw-bold text-success">${settlement.formatted_amount}</td>
+                            <td>${settlement.formatted_date}</td>
+                        </tr>
+                    `;
+                });
+                
+                settlementsHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                document.getElementById('settlementHistoryContent').innerHTML = settlementsHtml;
+            } else {
+                document.getElementById('settlementHistoryContent').innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <h5 class="text-muted mt-3">No Settlement History</h5>
+                        <p class="text-muted">No settlements have been made for this shopkeeper yet.</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading settlement history:', error);
+            document.getElementById('settlementHistoryContent').innerHTML = `
+                <div class="alert alert-danger text-center">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Failed to load settlement history: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    // Settle Balance Modal
+    const settleBalanceModal = document.getElementById('settleBalanceModal');
+    const settleBalanceForm = document.getElementById('settleBalanceForm');
+    const settleAmountInput = document.getElementById('settleAmount');
+    const settleErrorDiv = document.getElementById('settle-error');
+
+    settleBalanceModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const shopId = button.getAttribute('data-shop-id');
+        const shopName = button.getAttribute('data-shop-name');
+        const shopBalance = button.getAttribute('data-shop-balance');
+
+        document.getElementById('modalShopkeeperName').textContent = shopName;
+        document.getElementById('modalCurrentBalance').textContent = '₹' + parseFloat(shopBalance).toFixed(2);
+        settleBalanceForm.action = `/admin/settle_balance/${shopId}`;
+        settleAmountInput.value = '';
+        settleErrorDiv.style.display = 'none';
+        settleAmountInput.max = shopBalance;
+    });
+
+    settleBalanceForm.addEventListener('submit', function (e) {
+        const settleAmount = parseFloat(settleAmountInput.value);
+        const currentBalance = parseFloat(document.getElementById('modalCurrentBalance').textContent.replace('₹', ''));
+
+        if (isNaN(settleAmount) || settleAmount <= 0) {
+            e.preventDefault();
+            settleErrorDiv.style.display = 'block';
+            settleErrorDiv.textContent = 'Settle amount must be greater than 0.';
+            return;
+        }
+
+        if (settleAmount > currentBalance) {
+            e.preventDefault();
+            settleErrorDiv.style.display = 'block';
+            settleErrorDiv.textContent = 'Settle amount cannot exceed current balance.';
+            return;
+        }
+    });
+
+    settleAmountInput.addEventListener('input', function() {
+        const settleAmount = parseFloat(this.value);
+        const currentBalance = parseFloat(document.getElementById('modalCurrentBalance').textContent.replace('₹', ''));
+
+        if (isNaN(settleAmount) || settleAmount <= 0) {
+            settleErrorDiv.style.display = 'block';
+            settleErrorDiv.textContent = 'Settle amount must be greater than 0.';
+        } else if (settleAmount > currentBalance) {
+            settleErrorDiv.style.display = 'block';
+            settleErrorDiv.textContent = 'Settle amount cannot exceed current balance.';
+        } else {
+            settleErrorDiv.style.display = 'none';
+        }
+    });
+
+    // Utility Functions
+    function togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.remove("bi-eye-slash");
+            icon.classList.add("bi-eye");
+        } else {
+            input.type = "password";
+            icon.classList.remove("bi-eye");
+            icon.classList.add("bi-eye-slash");
+        }
+    }
+
+    function validateBankForm() {
+        const acc = document.getElementById("account_number").value.trim();
+        const reAcc = document.getElementById("re_account_number").value.trim();
+        const errorDiv = document.getElementById("bank-error");
+        
+        if (acc !== reAcc) {
+            errorDiv.style.display = "block";
+            errorDiv.textContent = "Account number and re-entered account number do not match.";
+            return false;
+        }
+        
+        if (acc === "" || reAcc === "") {
+            errorDiv.style.display = "block";
+            errorDiv.textContent = "Please fill in both account number fields.";
+            return false;
+        }
+        
+        errorDiv.style.display = "none";
+        return true;
+    }
+
+    function promptDeclineReason(txId) {
+        let reason = prompt("Enter reason for declining (max 120 characters):");
+        if (reason && reason.trim() !== "") {
+            if (reason.length > 120) {
+                alert("Reason is too long. Please keep it under 120 characters.");
+                return;
+            }
+            document.getElementById("declineReason" + txId).value = reason;
+            document.getElementById("declineForm" + txId).submit();
+        }
+    }
+
+    // Tab Management
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabButtons = document.querySelectorAll('#adminTabs .nav-link');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const target = this.getAttribute('data-bs-target');
+                
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-selected', 'false');
+                });
+                
+                tabPanes.forEach(pane => {
+                    pane.classList.remove('show', 'active');
+                });
+                
+                this.classList.add('active');
+                this.setAttribute('aria-selected', 'true');
+                document.querySelector(target).classList.add('show', 'active');
+            });
+        });
+    });
+
+    // Edit Shopkeeper Modal Handling
+    const editShopkeeperModal = document.getElementById("editShopkeeperModal");
+    const editShopkeeperForm = document.getElementById("editShopkeeperForm");
+
+    editShopkeeperModal.addEventListener("show.bs.modal", function(event) {
+        const button = event.relatedTarget;
+        const shopkeeperId = button.getAttribute("data-shopkeeper-id");
+        const shopkeeperName = button.getAttribute("data-shopkeeper-name");
+        const shopkeeperEmail = button.getAttribute("data-shopkeeper-email");
+        const shopkeeperPhone = button.getAttribute("data-shopkeeper-phone");
+        const shopkeeperAddress = button.getAttribute("data-shopkeeper-address");
+
+        // Update modal form fields with current data
+        document.getElementById("edit_shop_name").value = shopkeeperName;
+        document.getElementById("edit_shop_email").value = shopkeeperEmail;
+        document.getElementById("edit_shop_phone").value = shopkeeperPhone;
+        document.getElementById("edit_shop_address").value = shopkeeperAddress;
+        
+        // Clear password field
+        document.getElementById("edit_shop_password").value = "";
+        
+        // Update form action
+        editShopkeeperForm.action = `/admin/edit_shopkeeper/${shopkeeperId}`;
+    });
+
+    // Edit Student Modal Handling (UPDATED)
+    const editStudentModal = document.getElementById("editStudentModal");
+    const editStudentForm = document.getElementById("editStudentForm");
+
+    editStudentModal.addEventListener("show.bs.modal", function(event) {
+        const button = event.relatedTarget;
+        const studentId = button.getAttribute("data-student-id");
+        
+        // Update form action
+        editStudentForm.action = `/admin/edit_student/${studentId}`;
+
+        // Update modal form fields with current data
+        document.getElementById("edit_student_name").value = button.getAttribute("data-student-name");
+        document.getElementById("edit_student_id").value = button.getAttribute("data-student-student_id");
+        document.getElementById("edit_student_class").value = button.getAttribute("data-student-class_name");
+        document.getElementById("edit_student_age").value = button.getAttribute("data-student-age");
+        document.getElementById("edit_student_address").value = button.getAttribute("data-student-address");
+        document.getElementById("edit_student_father_name").value = button.getAttribute("data-student-father_name");
+        document.getElementById("edit_student_phone").value = button.getAttribute("data-student-phone");
+        document.getElementById("edit_student_gender").value = button.getAttribute("data-student-gender") || ""; // Set gender
+        
+        // Clear UPI pin field
+        document.getElementById("edit_student_upi_pin").value = "";
+    });
+
+    // NEW SCRIPT: Adjust Balance Modal
+    const adjustBalanceModal = document.getElementById('adjustBalanceModal');
+    const adjustBalanceForm = document.getElementById('adjustBalanceForm');
+
+    adjustBalanceModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const studentId = button.getAttribute('data-student-id');
+        const studentName = button.getAttribute('data-student-name');
+        const studentBalance = parseFloat(button.getAttribute('data-student-balance')).toFixed(2);
+
+        // Set student info
+        document.getElementById('adjustStudentName').textContent = studentName;
+        document.getElementById('adjustStudentBalance').textContent = `₹${studentBalance}`;
+        
+        // Set form action
+        adjustBalanceForm.action = `/admin/adjust_balance/${studentId}`;
+
+        // Reset form
+        adjustBalanceForm.reset();
+        document.getElementById('adjust-balance-error').style.display = 'none';
+    });
+
+    adjustBalanceForm.addEventListener('submit', function(e) {
+        const amount = parseFloat(this.querySelector('input[name="amount"]').value);
+        const type = this.querySelector('select[name="transaction_type"]').value;
+        const currentBalance = parseFloat(document.getElementById('adjustStudentBalance').textContent.replace('₹', ''));
+        const errorDiv = document.getElementById('adjust-balance-error');
+
+        if (type === 'remove' && amount > currentBalance) {
+            e.preventDefault(); // Stop form submission
+            errorDiv.textContent = 'Error: Cannot remove more than the current balance.';
+            errorDiv.style.display = 'block';
+        } else {
+            errorDiv.style.display = 'none';
+        }
+    });
+
+    // NEW SCRIPT: Student Payment History Modal
+    const historyModal = document.getElementById('studentPaymentHistoryModal');
+    historyModal.addEventListener('show.bs.modal', async function (event) {
+        const button = event.relatedTarget;
+        const studentId = button.getAttribute('data-student-id');
+
+        // Reset modal state
+        document.getElementById('historySpinner').style.display = 'block';
+        document.getElementById('historyTableContainer').style.display = 'none';
+        document.getElementById('noHistoryMessage').style.display = 'none';
+        document.getElementById('studentHistoryTableBody').innerHTML = '';
+        document.getElementById('historyStudentName').textContent = 'Loading...';
+        document.getElementById('historyStudentId').textContent = '...';
+        document.getElementById('historyStudentBalance').textContent = '₹0.00';
+
+        try {
+            // Fetch data
+            const response = await fetch(`/api/admin/student_history/${studentId}`);
+            if (!response.ok) {
+                throw new Error('Failed to load history');
+            }
+            const data = await response.json();
+
+            // Populate header
+            document.getElementById('historyStudentName').textContent = data.student_name;
+            document.getElementById('historyStudentId').textContent = data.student_id;
+            document.getElementById('historyStudentBalance').textContent = data.current_balance;
+
+            // Check if history exists
+            if (data.history && data.history.length > 0) {
+                const tableBody = document.getElementById('studentHistoryTableBody');
+                let rowsHtml = '';
+                
+                data.history.forEach(item => {
+                    rowsHtml += `
+                        <tr>
+                            <td>${item.date}</td>
+                            <td>${item.type}</td>
+                            <td>${item.description}</td>
+                            <td class="fw-bold ${item.amount_class}">${item.amount}</td>
+                            <td>${item.status}</td>
+                        </tr>
+                    `;
+                });
+                
+                tableBody.innerHTML = rowsHtml;
+                document.getElementById('historyTableContainer').style.display = 'block';
+            } else {
+                // Show no history message
+                document.getElementById('noHistoryMessage').style.display = 'block';
+            }
+
+        } catch (error) {
+            console.error('Error fetching student history:', error);
+            document.getElementById('studentHistoryTableBody').innerHTML = `
+                <tr><td colspan="5" class="text-center text-danger">Failed to load history. Please try again.</td></tr>
+            `;
+            document.getElementById('historyTableContainer').style.display = 'block';
+        } finally {
+            // Hide spinner
+            document.getElementById('historySpinner').style.display = 'none';
+        }
+    });
+
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

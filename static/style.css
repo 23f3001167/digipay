@@ -1,0 +1,83 @@
+body {
+  background-image: url("/static/images/school_bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* If you specifically need a class for certain pages */
+.body1 {
+  background-image: url("/static/images/school_bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+h2, h4 {
+  color: black;
+}
+
+.navbar-brand {
+  font-weight: bold;
+}
+
+form {
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.hero-background {
+  color: white;
+  text-align: center;
+  padding: 50px 0;
+}
+
+/* Additional styles for better appearance */
+.container {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 8px;
+}
+
+.btn {
+  border-radius: 5px;
+}
+
+.table {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.alert {
+  border-radius: 8px;
+  border: none;
+}
+
+.modal-content {
+  border-radius: 10px;
+  border: none;
+}
+
+.navbar {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}

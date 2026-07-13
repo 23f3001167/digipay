@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Digital Banking System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #28a745;
+            --accent-color: #ff6b35;
+            --light-bg: #f8f9fa;
+            --dark-bg: #1a1a2e;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .hero-background {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect fill="%232c5aa0" width="1200" height="800"/></svg>');
+            background-size: cover;
+            background-position: center;
+            padding: 100px 0;
+        }
+        
+        .feature-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        
+        .step-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .step-card:hover {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 auto 20px;
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(44, 90, 160, 0.3);
+        }
+        
+        .form-control {
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+        }
+        
+        .input-group-text {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+        }
+        
+        .section-title {
+            position: relative;
+            padding-bottom: 15px;
+            margin-bottom: 40px;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 2px;
+        }
+        
+        .floating-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .stats-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 60px 0;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .testimonial-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        
+        .testimonial-text {
+            font-style: italic;
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
+        
+        .testimonial-author {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mt-3 mx-3" role="alert">
+                    <div class="container">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- HERO SECTION -->
+    <section class="hero-background text-white">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">DigiPay</h1>
+                    <p class="lead mb-4">Transform your school into a cashless campus with secure, instant digital payments for students, parents, and shopkeepers.</p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <button class="btn btn-light btn-lg px-4 py-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#loginModal">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                        </button>
+                        <button class="btn btn-outline-light btn-lg px-4 py-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#registerModal">
+                            <i class="bi bi-person-plus me-2"></i>Register School
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <div class="floating-animation">
+                        <i class="bi bi-phone" style="font-size: 12rem; opacity: 0.8;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="py-5 bg-white">
+        <div class="container">
+            <h2 class="text-center section-title">How It Works</h2>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h5>Parent Adds Funds</h5>
+                        <p class="mb-0">Parents securely add money to their child's digital wallet through the parent dashboard.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h5>Student Makes Purchases</h5>
+                        <p class="mb-0">Students use QR codes or student ID to make purchases at campus shops.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h5>Shopkeeper Receives Payment</h5>
+                        <p class="mb-0">Shopkeepers instantly receive digital payments into their wallet after each transaction.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <h5>Admin Settlement</h5>
+                        <p class="mb-0">School admin settles shopkeeper balances and maintains system oversight.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center section-title">Key Features</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card card h-100 text-center">
+                        <div class="card-body p-4">
+                            <div class="text-primary mb-3">
+                                <i class="bi bi-wallet2" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title">Campus Digital Wallet</h5>
+                            <p class="card-text">Secure instant digital payments throughout the school campus without physical cash.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card card h-100 text-center">
+                        <div class="card-body p-4">
+                            <div class="text-success mb-3">
+                                <i class="bi bi-shield-check" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title">School Admin Control</h5>
+                            <p class="card-text">Complete administrative control over users, balances, transactions, and shop management.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card card h-100 text-center">
+                        <div class="card-body p-4">
+                            <div class="text-info mb-3">
+                                <i class="bi bi-graph-up" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title">Parent Monitoring</h5>
+                            <p class="card-text">Parents can recharge wallets and monitor spending patterns from anywhere, anytime.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card card h-100 text-center">
+                        <div class="card-body p-4">
+                            <div class="text-warning mb-3">
+                                <i class="bi bi-shop" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title">Shop Integration</h5>
+                            <p class="card-text">Seamless integration with campus shops for digital sales tracking and settlements.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card card h-100 text-center">
+                        <div class="card-body p-4">
+                            <div class="text-danger mb-3">
+                                <i class="bi bi-qr-code-scan" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title">QR Code Payments</h5>
+                            <p class="card-text">Quick and secure transactions using QR code scanning technology.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card card h-100 text-center">
+                        <div class="card-body p-4">
+                            <div class="text-secondary mb-3">
+                                <i class="bi bi-clock-history" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title">Real-time Tracking</h5>
+                            <p class="card-text">Live transaction tracking and instant balance updates for all users.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section class="py-5 bg-light">
+        <div class="container text-center">
+            <h2 class="section-title">About Our Platform</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <p class="lead text-muted">
+                        We're pioneering the future of campus financial management with our Student Digital Banking System. 
+                        Designed specifically for educational environments where mobile phone restrictions exist, our platform 
+                        ensures transparency, security, and convenience for all stakeholders.
+                    </p>
+                    <div class="mt-4">
+                        <button class="btn btn-primary-custom me-3" data-bs-toggle="modal" data-bs-target="#loginModal">
+                            Get Started
+                        </button>
+                        <button class="btn btn-primary-custom me-3" data-bs-toggle="modal" data-bs-target="#registerModal">
+                            Register School
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">© 2025 Student Digital Banking System | Built with ❤️ by NovaNine</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small>Secure • Reliable • Innovative</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- LOGIN MODAL -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Login to Your Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="/login">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="loginPassword" name="password" placeholder="Enter your password" required>
+                                <span class="input-group-text">
+                                    <i class="bi bi-eye-slash" id="toggleLoginPassword" style="cursor: pointer;"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary-custom w-100 py-2">Login to Dashboard</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- REGISTER MODAL -->
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Register Your School</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="/register_school" method="POST" onsubmit="return validateRegisterForm();">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">School Name</label>
+                                <input type="text" class="form-control" name="school_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="registerPassword" name="password" required>
+                                <span class="input-group-text">
+                                    <i class="bi bi-eye-slash" id="toggleRegisterPassword" style="cursor: pointer;"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Confirm Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="confirmRegisterPassword" name="confirmPassword" required>
+                                <span class="input-group-text">
+                                    <i class="bi bi-eye-slash" id="toggleConfirmRegisterPassword" style="cursor: pointer;"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">School Location</label>
+                                <input type="text" class="form-control" name="location" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Pincode</label>
+                                <input type="text" class="form-control" name="pincode" pattern="\d{6}" maxlength="6" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" pattern="[0-9]{10}" placeholder="10-digit number" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary-custom w-100 py-2">Register School</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function validateRegisterForm() {
+            const pwd = document.getElementById("registerPassword").value;
+            const confirmPwd = document.getElementById("confirmRegisterPassword").value;
+            
+            if (pwd !== confirmPwd) {
+                alert("Passwords do not match! Please make sure both passwords are identical.");
+                return false;
+            }
+            
+            if (pwd.length < 6) {
+                alert("Password must be at least 6 characters long.");
+                return false;
+            }
+            
+            return true;
+        }
+        
+        function setupPasswordToggle(inputId, toggleId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = document.getElementById(toggleId);
+            
+            toggleIcon.addEventListener('click', function () {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                toggleIcon.classList.toggle('bi-eye');
+                toggleIcon.classList.toggle('bi-eye-slash');
+            });
+        }
+        
+        // Initialize password toggles
+        setupPasswordToggle('registerPassword', 'toggleRegisterPassword');
+        setupPasswordToggle('confirmRegisterPassword', 'toggleConfirmRegisterPassword');
+        setupPasswordToggle('loginPassword', 'toggleLoginPassword');
+        
+        // Add smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
