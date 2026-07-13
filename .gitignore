@@ -1,0 +1,41 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.swp
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Flask/Django instance folder
+instance/
+
+# Coverage and test reports
+.coverage
+htmlcov/
+*.cover
+
+# Node modules (if frontend assets are used)
+node_modules/
+
+# Database files
+*.sqlite3
+*.db
+
+# Secrets
+.env
